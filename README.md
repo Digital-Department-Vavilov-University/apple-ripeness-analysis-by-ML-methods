@@ -27,6 +27,83 @@ apple-ripeness-analysis-by-ML-methods
 - Acidity: уровень кислотности продукта по шкале от очень низкого до очень высокого.
 - Quality: общая оценка качества продукта, либо "good" либо "bad" (хорошо/плохо). - Это Целевой Признак объекта (таргет)
   
-  Построены графики распределения признаков
+  Построены графики распределения признаков и матрица корреляции признаков 
 
-![Распределения признаков](https://disk.yandex.ru/i/sq9SbdRRCyHx5g)
+![Распределения признаков](https://github.com/Digital-Department-Vavilov-University/apple-ripeness-analysis-by-ML-methods/blob/main/Hist_plot.png)
+![Матрица корреляции признаков](https://github.com/Digital-Department-Vavilov-University/apple-ripeness-analysis-by-ML-methods/blob/main/matrx_corr.png)
+
+Признаки нормално распределены.
+Между признаками наблюдается слабая (положительная и отрицательная) корреляция от 0 до 0,3. У ряда признаков средняя корреляция от 0,3 - устранять мультикорреляцию признаков не нужно.
+
+Обучены следующие модели
+- Random Forest Classifier
+- LGBM Classifier
+- Метод опорных векторов (SVC)
+Подбор гиппер параметров осуществлялся с использованием функции RandomizedSearchCV.
+Участок кода подборра гипперпараметров для модели Random Forest Classifier
+
+            param_dist_rf = {
+                'n_estimators': [50, 100, 200, 300],
+                'max_depth': [None, 10, 20, 30],
+                'min_samples_split': [2, 5, 10],
+                'min_samples_leaf': [1, 2, 4],
+                'bootstrap': [True, False],
+                'criterion': ['gini', 'entropy'],
+            }
+            
+            rf = RandomForestClassifier()
+            
+            randomized_search_rf = RandomizedSearchCV(
+                rf,
+                param_distributions=param_dist_rf,
+                n_iter=10,
+                cv=5,
+                scoring='accuracy',
+                random_state=42,
+                n_jobs=-1
+            )
+            
+            randomized_search_rf.fit(X_train, y_train)
+            
+            best_params_rf = randomized_search_rf.best_params_
+            print(f"Лучшие гипперпараметры для Random Forest: {best_params_rf}")
+            
+            best_rf_model = randomized_search_rf.best_estimator_
+            
+            rf_predicted = best_rf_model.predict(X_test)
+            
+            rf_acc_score = accuracy_score(y_test, rf_predicted)
+            rf_conf_matrix = confusion_matrix(y_test, rf_predicted)
+
+            print("\nТочность Random Forest Classifier:", rf_acc_score * 100, '\n')
+            print("Отчет о классификации - Random Forest:")
+            print(classification_report(y_test, rf_predicted))
+
+  
+Для обученных моделей вычислилась точность:
+-  Random Forest Classifier: 88.5286783042394
+-  LGBMClassifier: 89.77556109725685
+-  метода опорных векторов: 91.52119700748129
+
+Лучшая точность у метода опорных векторов (SVC)
+____
+__Выводы__
+
+Изучен и обработан датасет хранящий в себе информацию о спелости плодов содержащий следующие признаки
+Size: Размер элемента в некоторой единице измерения.
+Weight: Вес элемента в некоторой единице измерения.
+Sweetness: степень сладости продукта по шкале от очень сладкого до очень кислого.
+Crunchiness: степень хрусткости продукта по шкале от очень мягкого до очень хрустящего.
+Juiciness: степень сочности продукта по шкале от очень сухого до очень сочного.
+Ripeness: степень спелости продукта по шкале от незрелого до перезрелого.
+Acidity: уровень кислотности продукта по шкале от очень низкого до очень высокого.
+Quality: общая оценка качества продукта, либо "good" либо "bad" (хорошо/плохо).
+В качествен целевого признака был выбран - Quality.
+
+После изучения датасета было произведено изменение типов данных двух признаков (Acidity и  Quality).
+Построены графики распределения и матрица корреляции признаков.
+для обучения было выбрано 3 модели
+- Random Forest Classifier
+- LGBM Classifier
+- Метод опорных векторов (SVC)
+Из которых модель SVC показала лучший результат на этапе обучения (точность 91.5) и была выбрана для проверки на кроссвалидации и показала следующие результаты точности на тестовой выборке - 90.6
